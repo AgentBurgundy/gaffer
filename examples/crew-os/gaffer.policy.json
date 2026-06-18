@@ -1,0 +1,53 @@
+{
+  "$schemaNote": "gaffer policy for the crew-os target repo. Copy to crew-os/.gaffer/policy.json. Reflects crew-os CLAUDE.md: PRs target staging; billing/auth/tenancy/migrations are human-gated.",
+  "version": 1,
+
+  "repo": {
+    "root": ".",
+    "baseBranch": "staging",
+    "mergeTarget": "staging",
+    "remote": "origin"
+  },
+
+  "worktreeRoot": "../.gaffer-worktrees-crew-os",
+  "stateDir": ".gaffer",
+
+  "autonomy": "full",
+  "requireGreenCI": true,
+
+  "verify": {
+    "timeoutSec": 2400,
+    "steps": [
+      { "name": "install",   "cmd": "npm ci",        "optional": true },
+      { "name": "typecheck", "cmd": "npm run build", "optional": false },
+      { "name": "test",      "cmd": "npm test",      "optional": false }
+    ]
+  },
+
+  "gates": {
+    "onMatch": "require-human-approval",
+    "escalateToken": "ESCALATE:",
+    "paths": [
+      "server/billing/**",
+      "server/stripe*.ts",
+      "server/auth.ts",
+      "server/permissions.ts",
+      "server/middleware/resolveOrg*",
+      "prisma/migrations/**",
+      "prisma/schema.prisma"
+    ]
+  },
+
+  "budget": {
+    "dailyTokens": 8000000,
+    "dailyUsd": 75,
+    "perRunTokens": 800000,
+    "onExceed": "block"
+  },
+
+  "pr": {
+    "draft": false,
+    "labels": ["gaffer", "ai-authored"],
+    "bodyFooter": "🤖 Authored by a gaffer team agent. Targets staging per crew-os workflow. Review before merge — verify multi-tenant isolation on any tenant-data path."
+  }
+}

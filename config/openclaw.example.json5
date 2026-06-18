@@ -1,0 +1,122 @@
+// ============================================================================
+// gaffer — example OpenClaw configuration (the org chart)
+// ----------------------------------------------------------------------------
+// Merge the `agents`, `bindings`, `tools`, and `skills` blocks below into your
+// ~/.openclaw/openclaw.json (JSON5 — comments + trailing commas are fine).
+//
+// Replace every <ABS_PATH_TO_GAFFER> with the absolute path to your checkout
+// of this repo (the dir containing this file's parent). On install we point each
+// agent's *workspace* directly at the repo's agents/<id> folder, so:
+//   - the personas are version-controlled, AND
+//   - editing a prompt in the OpenClaw web UI (agents.files.set) writes straight
+//     back to the tracked SOUL.md / AGENTS.md → it shows up in `git diff`.
+// Runtime scratch (memory/, sessions/) is gitignored — see .gitignore.
+// ============================================================================
+{
+  agents: {
+    defaults: {
+      // Shared model tier. Teams that omit `model` inherit this.
+      model: {
+        primary: "anthropic/claude-sonnet-4-6",
+        fallbacks: ["anthropic/claude-opus-4-6"],
+      },
+      models: {
+        "anthropic/claude-opus-4-6": { alias: "opus" },
+        "anthropic/claude-sonnet-4-6": { alias: "sonnet" },
+      },
+
+      // v0: run on the host (no sandbox) so the build agent can use your local
+      // `gh`/`git` to open PRs. HARDEN THIS before granting real autonomy — see
+      // docs/autonomy.md and docs/architecture.md ("deferred").
+      sandbox: { mode: "off" },
+
+      // The CTO→team→worker tree. Depth 2 = main(CTO) → team → optional worker.
+      subagents: {
+        maxSpawnDepth: 2,
+        maxConcurrent: 4,
+        maxChildrenPerAgent: 5,
+        runTimeoutSeconds: 1800,
+        // Cheaper model for leaf workers; teams/CTO keep their own tier.
+        model: "anthropic/claude-sonnet-4-6",
+      },
+
+      // Skills are loaded live from the repo (no copy) — see skills.load below.
+      skills: [],
+    },
+
+    list: [
+      // ---- The CTO: the one you talk to. Full persona (SOUL.md applies). -----
+      {
+        id: "cto",
+        default: true,
+        identity: { name: "Avery", theme: "pragmatic engineering CTO", emoji: "🧭" },
+        workspace: "<ABS_PATH_TO_GAFFER>/agents/cto",
+        model: "anthropic/claude-opus-4-6", // judgment/decomposition → top tier
+        // `coding` profile exposes sessions_spawn; add the wait primitive.
+        tools: { profile: "coding", alsoAllow: ["sessions_yield", "subagents"] },
+        // The CTO may dispatch to these team agents via sessions_spawn(agentId).
+        subagents: { allowAgents: ["scheduling", "jobs"], delegationMode: "prefer" },
+        skills: ["initiative"],
+      },
+
+      // ---- Team: Scheduling/Calendar -----------------------------------------
+      // NOTE: when spawned as a sub-agent, only AGENTS.md + TOOLS.md inject
+      // (NOT SOUL.md). Put each team's operating rules in AGENTS.md.
+      {
+        id: "scheduling",
+        identity: { name: "Sam", theme: "scheduling & calendar lead", emoji: "🗓️" },
+        workspace: "<ABS_PATH_TO_GAFFER>/agents/scheduling",
+        model: "anthropic/claude-sonnet-4-6",
+        tools: { profile: "coding", alsoAllow: ["sessions_yield", "subagents"] },
+        // Teams may spawn the OTHER team's reviewer for cross-team review.
+        subagents: { allowAgents: ["jobs"] },
+        skills: ["dev-pipeline"],
+      },
+
+      // ---- Team: Jobs/Pipeline -----------------------------------------------
+      {
+        id: "jobs",
+        identity: { name: "Jordan", theme: "jobs & pipeline lead", emoji: "🧱" },
+        workspace: "<ABS_PATH_TO_GAFFER>/agents/jobs",
+        model: "anthropic/claude-sonnet-4-6",
+        tools: { profile: "coding", alsoAllow: ["sessions_yield", "subagents"] },
+        subagents: { allowAgents: ["scheduling"] },
+        skills: ["dev-pipeline"],
+      },
+    ],
+  },
+
+  // Peer-to-peer Q&A between teams (e.g. jobs asks scheduling a question).
+  // Cross-team REVIEW uses sessions_spawn; this is for conversational asks.
+  tools: {
+    agentToAgent: { enabled: true, allow: ["cto", "scheduling", "jobs"] },
+  },
+
+  // Load gaffer's skills straight from the repo — no install/copy step.
+  skills: {
+    load: { extraDirs: ["<ABS_PATH_TO_GAFFER>/skills"] },
+    entries: {
+      initiative: { enabled: true },
+      "dev-pipeline": {
+        enabled: true,
+        // The pipeline script needs these on PATH inside the agent's exec env.
+        env: { GAFFER_HOME: "<ABS_PATH_TO_GAFFER>" },
+      },
+    },
+  },
+
+  // Route the built-in web chat to the CTO. (WebChat is always on.)
+  // To talk to the CTO in the browser, just message it. Slack later:
+  //   channels: { slack: { enabled: true, botToken: "...", appToken: "...",
+  //     channels: { "#eng": { allow: true, requireMention: true } } } },
+  //   bindings: [{ agentId: "cto", match: { channel: "slack", accountId: "*" } }],
+  bindings: [
+    { agentId: "cto", match: { channel: "webchat", accountId: "*" } },
+  ],
+
+  // 24/7 + daily standup live here once enabled (deferred in v0). Example:
+  //   cron: { enabled: true },
+  // then create jobs with:  openclaw cron create "0 9 * * 1-5" \
+  //     "Run the daily standup: summarize each team's open tickets and PRs." \
+  //     --session isolated --agent cto --tools exec,read
+}

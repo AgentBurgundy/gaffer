@@ -1,0 +1,54 @@
+{
+  "$schemaNote": "gaffer policy — copied into a TARGET repo as .gaffer/policy.json. The deterministic scripts (pipeline.mjs, budget.mjs) read this. Tune per repo. This file is the GENERIC default; see examples/crew-os/ for a concrete override.",
+  "version": 1,
+
+  "repo": {
+    "root": ".",
+    "baseBranch": "main",
+    "mergeTarget": "main",
+    "remote": "origin"
+  },
+
+  "worktreeRoot": "../.gaffer-worktrees",
+  "stateDir": ".gaffer",
+
+  "autonomy": "full",
+  "requireGreenCI": true,
+
+  "verify": {
+    "timeoutSec": 1800,
+    "steps": [
+      { "name": "install",   "cmd": "npm ci",         "optional": true },
+      { "name": "typecheck", "cmd": "npm run build",  "optional": false },
+      { "name": "test",      "cmd": "npm test",       "optional": false }
+    ]
+  },
+
+  "gates": {
+    "onMatch": "require-human-approval",
+    "escalateToken": "ESCALATE:",
+    "paths": [
+      "**/billing/**",
+      "**/payments/**",
+      "**/stripe*",
+      "**/auth/**",
+      "**/auth.*",
+      "**/permissions.*",
+      "**/*secret*",
+      "**/migrations/**"
+    ]
+  },
+
+  "budget": {
+    "dailyTokens": 5000000,
+    "dailyUsd": 50,
+    "perRunTokens": 600000,
+    "onExceed": "block"
+  },
+
+  "pr": {
+    "draft": false,
+    "labels": ["gaffer", "ai-authored"],
+    "bodyFooter": "🤖 Authored by a gaffer team agent. Review before merge."
+  }
+}

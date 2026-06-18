@@ -1,0 +1,20 @@
+# Node
+node_modules/
+npm-debug.log*
+*.log
+
+# Gaffer runtime state (ledger, worktrees, run metadata) — never committed
+.gaffer/
+*.generated.json5
+*.generated.json
+
+# Agent runtime artifacts written into workspace dirs by OpenClaw at runtime.
+# The *.md persona files (SOUL.md / AGENTS.md / TOOLS.md) ARE tracked — only
+# the runtime scratch (memory snapshots, sessions, bootstrap caches) is ignored.
+agents/*/memory/
+agents/*/sessions/
+agents/*/.cache/
+
+# OS
+.DS_Store
+Thumbs.db

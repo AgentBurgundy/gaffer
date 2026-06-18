@@ -1,0 +1,82 @@
+// gaffer × crew-os — concrete OpenClaw config (paths filled for this machine).
+// Use as ~/.openclaw/openclaw.json, or merge these blocks into yours.
+// Assumes gaffer at F:/code/gaffer and the crew-os repo at F:/code/crew-os.
+{
+  agents: {
+    defaults: {
+      model: {
+        primary: "anthropic/claude-sonnet-4-6",
+        fallbacks: ["anthropic/claude-opus-4-6"],
+      },
+      models: {
+        "anthropic/claude-opus-4-6": { alias: "opus" },
+        "anthropic/claude-sonnet-4-6": { alias: "sonnet" },
+      },
+      sandbox: { mode: "off" }, // v0: host session + local gh. Harden before shared use.
+      subagents: {
+        maxSpawnDepth: 2,
+        maxConcurrent: 4,
+        maxChildrenPerAgent: 5,
+        runTimeoutSeconds: 1800,
+        model: "anthropic/claude-sonnet-4-6",
+      },
+      skills: [],
+    },
+    list: [
+      {
+        id: "cto",
+        default: true,
+        identity: { name: "Avery", theme: "pragmatic engineering CTO", emoji: "🧭" },
+        workspace: "F:/code/gaffer/agents/cto",
+        model: "anthropic/claude-opus-4-6",
+        tools: { profile: "coding", alsoAllow: ["sessions_yield", "subagents"] },
+        subagents: { allowAgents: ["scheduling", "jobs"], delegationMode: "prefer" },
+        skills: ["initiative"],
+      },
+      {
+        id: "scheduling",
+        identity: { name: "Sam", theme: "scheduling & calendar lead", emoji: "🗓️" },
+        workspace: "F:/code/gaffer/agents/scheduling",
+        model: "anthropic/claude-sonnet-4-6",
+        tools: { profile: "coding", alsoAllow: ["sessions_yield", "subagents"] },
+        subagents: { allowAgents: ["jobs"] },
+        skills: ["dev-pipeline"],
+      },
+      {
+        id: "jobs",
+        identity: { name: "Jordan", theme: "jobs & pipeline lead", emoji: "🧱" },
+        workspace: "F:/code/gaffer/agents/jobs",
+        model: "anthropic/claude-sonnet-4-6",
+        tools: { profile: "coding", alsoAllow: ["sessions_yield", "subagents"] },
+        subagents: { allowAgents: ["scheduling"] },
+        skills: ["dev-pipeline"],
+      },
+    ],
+  },
+
+  tools: {
+    agentToAgent: { enabled: true, allow: ["cto", "scheduling", "jobs"] },
+  },
+
+  skills: {
+    load: { extraDirs: ["F:/code/gaffer/skills"] },
+    entries: {
+      initiative: {
+        enabled: true,
+        env: { GAFFER_TARGET_REPO: "F:/code/crew-os" },
+      },
+      "dev-pipeline": {
+        enabled: true,
+        env: { GAFFER_HOME: "F:/code/gaffer", GAFFER_TARGET_REPO: "F:/code/crew-os" },
+      },
+    },
+  },
+
+  bindings: [
+    { agentId: "cto", match: { channel: "webchat", accountId: "*" } },
+  ],
+
+  // The crew-os deterministic policy (gates = CLAUDE.md "Stop and ask" zones,
+  // base = staging) lives in F:/code/crew-os/.gaffer/policy.json — copy it from
+  // examples/crew-os/gaffer.policy.json.
+}
