@@ -31,7 +31,7 @@
         model: "anthropic/claude-opus-4-6",
         tools: { profile: "coding", alsoAllow: ["sessions_yield", "subagents"] },
         subagents: { allowAgents: ["scheduling", "jobs"], delegationMode: "prefer" },
-        skills: ["initiative"],
+        skills: ["initiative", "gaffer-init"],
       },
       {
         id: "scheduling",
@@ -64,6 +64,10 @@
       initiative: {
         enabled: true,
         env: { GAFFER_TARGET_REPO: "F:/code/crew-os" },
+      },
+      "gaffer-init": {
+        enabled: true,
+        env: { GAFFER_HOME: "F:/code/gaffer", GAFFER_TARGET_REPO: "F:/code/crew-os" },
       },
       "dev-pipeline": {
         enabled: true,

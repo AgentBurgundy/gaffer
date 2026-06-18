@@ -56,7 +56,7 @@
         tools: { profile: "coding", alsoAllow: ["sessions_yield", "subagents"] },
         // The CTO may dispatch to these team agents via sessions_spawn(agentId).
         subagents: { allowAgents: ["scheduling", "jobs"], delegationMode: "prefer" },
-        skills: ["initiative"],
+        skills: ["initiative", "gaffer-init"],
       },
 
       // ---- Team: Scheduling/Calendar -----------------------------------------
@@ -97,6 +97,7 @@
     load: { extraDirs: ["<ABS_PATH_TO_GAFFER>/skills"] },
     entries: {
       initiative: { enabled: true },
+      "gaffer-init": { enabled: true, env: { GAFFER_HOME: "<ABS_PATH_TO_GAFFER>" } },
       "dev-pipeline": {
         enabled: true,
         // The pipeline script needs these on PATH inside the agent's exec env.

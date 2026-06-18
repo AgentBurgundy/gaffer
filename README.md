@@ -90,6 +90,7 @@ example (a real contractor-CRM repo): **[examples/crew-os/](examples/crew-os/)**
 - [docs/autonomy.md](docs/autonomy.md) — autonomy levels, the gate list, `ESCALATE`, merge policy
 - [docs/budget.md](docs/budget.md) — the three tiers of spend enforcement and why v0 ships tier 1
 - [docs/install.md](docs/install.md) — install & wiring
+- [docs/init.md](docs/init.md) — `gaffer init`: survey a repo + vision, auto-split it into feature teams, and scaffold them
 
 ## License
 
